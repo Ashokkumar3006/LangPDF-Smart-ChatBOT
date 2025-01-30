@@ -1,4 +1,4 @@
-chroma_db/
+chroma/
 credentials/
 pdf/
 .env
