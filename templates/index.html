@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Content Search Assistant</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --radius: 1rem;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: var(--gray-50);
+            color: var(--gray-800);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 1rem auto;
+            padding: 1rem;
+            width: 95%;
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            height: 95vh;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .title {
+            font-size: 1.875rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, var(--primary), #60a5fa);
+            -webkit-background-clip: text;
+            -moz-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: var(--gray-600);
+            font-size: 1.125rem;
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+        }
+
+        .chat-box {
+            padding: 1.5rem;
+            overflow-y: auto;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            background: var(--gray-50);
+            border-radius: var(--radius);
+            border: 1px solid var(--gray-200);
+        }
+
+        .message {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            border-radius: var(--radius);
+            max-width: 70%;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(0.5rem); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            background: var(--gray-100);
+            margin-left: auto;
+        }
+
+        .message.ai {
+            background: var(--primary);
+            color: white;
+        }
+
+        .avatar {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .user .avatar {
+            background: var(--primary);
+            color: white;
+        }
+
+        .ai .avatar {
+            background: white;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+
+        .message-content {
+            flex: 1;
+            font-size: 1rem;
+        }
+
+        .sources {
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--gray-300);
+            font-size: 0.875rem;
+        }
+        .source-score {
+            padding: 0.25rem 0.75rem;
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            color: var(--gray-700);
+            font-weight: 500;
+        }
+
+        .source-item {
+            margin-bottom: 0.5rem;
+            padding: 0.5rem;
+            background: var(--gray-100);
+            border-radius: 0.5rem;
+        }
+
+        .source-link {
+            color: var(--primary-dark);
+            text-decoration: underline;
+            font-weight: 500;
+        }
+        
+
+        .textarea {
+            flex: 1;
+            padding: 1rem;
+            border: 2px solid var(--gray-200);
+            border-radius: var(--radius);
+            font-size: 1rem;
+            resize: none;
+            height: 120px;
+            width: 1000px;
+            background: white;
+            color: var(--gray-800);
+            transition: all 0.2s;
+        }
+
+        .textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .textarea::placeholder {
+            font-size: 1rem;
+            color: var(--gray-600);
+            font-style: italic;
+        }
+
+        .send-button {
+            align-self: flex-end;
+            padding: 1rem 2rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            top: -30px; /* Moves the button upward */
+        }
+
+        .send-button:hover {
+            background: var(--primary-dark);
+        }
+    </style>
+</head>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 class="title">PDF Content Search Assistant</h1>
+            <p class="subtitle">Ask questions about your PDF documents</p>
+        </header>
+
+        <main class="chat-container">
+            <div class="chat-box" id="chat-box"></div>
+            
+            <div class="input-container">
+                <div class="input-wrapper">
+                    <textarea 
+                        id="question" 
+                        class="textarea" 
+                        placeholder="Type your question here..."
+                        rows="3"
+                    ></textarea>
+                    <button id="ask-btn" class="send-button">
+                        <span>Send</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatBox = document.getElementById('chat-box');
+            const questionInput = document.getElementById('question');
+            const askButton = document.getElementById('ask-btn');
+
+            class ChatUI {
+                static createMessage(content, type = 'user') {
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = `message ${type}`;
+
+                    const avatar = document.createElement('div');
+                    avatar.className = 'avatar';
+                    avatar.textContent = type === 'user' ? 'U' : 'AI';
+
+                    const messageContent = document.createElement('div');
+                    messageContent.className = 'message-content';
+                    messageContent.textContent = content;
+
+                    messageDiv.appendChild(avatar);
+                    messageDiv.appendChild(messageContent);
+
+                    return messageDiv;
+                }
+
+                static createSourcesList(sources) {
+                    const sourcesDiv = document.createElement('div');
+                    sourcesDiv.className = 'sources';
+
+                    sources.forEach(source => {
+                        const sourceItem = document.createElement('div');
+                        sourceItem.className = 'source-item';
+
+                        const link = document.createElement('a');
+                        link.href = source.url;
+                        link.className = 'source-link';
+                        link.target = '_blank';
+                        link.textContent = source.text;
+
+                        const score = document.createElement('span');
+                        score.className = 'source-score';
+                        score.textContent = `Score: ${source.score}`;
+
+                        sourceItem.appendChild(link);
+                        sourceItem.appendChild(score);
+                        sourcesDiv.appendChild(sourceItem);
+                    });
+
+                    return sourcesDiv;
+                }
+
+                static scrollToBottom() {
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+
+                static setLoading(isLoading) {
+                    askButton.disabled = isLoading;
+                    questionInput.disabled = isLoading;
+                    
+                    if (isLoading) {
+                        askButton.innerHTML = '<span class="loading"></span>';
+                    } else {
+                        askButton.innerHTML = `
+                            <span>Send</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                            </svg>
+                        `;
+                    }
+                }
+            }
+
+            async function handleSubmit() {
+                const question = questionInput.value.trim();
+                if (!question) return;
+
+                ChatUI.setLoading(true);
+                chatBox.appendChild(ChatUI.createMessage(question, 'user'));
+                ChatUI.scrollToBottom();
+
+                try {
+                    const response = await fetch('/ask', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ question }),
+                    });
+
+                    const data = await response.json();
+                    
+                    if (!response.ok) throw new Error(data.message || 'An error occurred');
+
+                    const aiMessage = ChatUI.createMessage(data.answer, 'ai');
+                    if (data.sources?.length) {
+                        aiMessage.querySelector('.message-content')
+                            .appendChild(ChatUI.createSourcesList(data.sources));
+                    }
+                    
+                    chatBox.appendChild(aiMessage);
+                    questionInput.value = '';
+                    
+                } catch (error) {
+                    const errorMessage = ChatUI.createMessage(
+                        `Error: ${error.message}`, 
+                        'ai'
+                    );
+                    chatBox.appendChild(errorMessage);
+                } finally {
+                    ChatUI.setLoading(false);
+                    ChatUI.scrollToBottom();
+                }
+            }
+
+            askButton.addEventListener('click', handleSubmit);
+
+            questionInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSubmit();
+                }
+            });
+
+            // Auto-resize textarea
+            questionInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+            });
+        });
+    </script>
+</body>
+</html>

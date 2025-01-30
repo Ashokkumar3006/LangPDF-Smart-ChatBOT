@@ -1,0 +1,5 @@
+chroma_db/
+credentials/
+pdf/
+.env
+.env-prod
