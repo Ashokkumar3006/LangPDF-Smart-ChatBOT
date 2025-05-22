@@ -1,4 +1,4 @@
-# LANG-PDF-Search
+# LANG-PDF-SEARCH
 
 ### Create conda environment
 ```
