@@ -1,4 +1,4 @@
-# INFOMIND-PDF-Search
+# LANG-PDF-Search
 
 ### Create conda environment
 ```
